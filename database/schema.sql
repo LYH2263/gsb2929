@@ -28,6 +28,24 @@ CREATE TABLE IF NOT EXISTS cart_items (
     FOREIGN KEY (product_id) REFERENCES products(id)
 );
 
+CREATE TABLE IF NOT EXISTS orders (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    total DECIMAL(10, 2) DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+CREATE TABLE IF NOT EXISTS order_items (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    order_id INT NOT NULL,
+    product_id INT NOT NULL,
+    quantity INT DEFAULT 1,
+    price DECIMAL(10, 2) DEFAULT 0,
+    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES products(id)
+);
+
 -- 初始数据
 INSERT INTO products (name, description, price, image_url, stock, category) VALUES
 ('至臻无线降噪耳机', '高品质音质，采用先进的降噪技术，为您带来沉浸式听觉体验。', 1999.00, 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500', 50, '数码电子'),

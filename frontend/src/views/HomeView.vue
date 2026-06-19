@@ -23,27 +23,17 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAppStore } from '../store';
 
 const router = useRouter();
 const store = useAppStore();
-const products = ref([]);
+const products = computed(() => store.products);
 
-onMounted(async () => {
-  try {
-    const response = await fetch('http://localhost:8000/products');
-    products.value = await response.json();
-  } catch (error) {
-    console.error('Failed to fetch products:', error);
-    // Mock data if backend is not running
-    products.value = [
-      { id: 1, name: '至臻无线降噪耳机', price: 1999.00, image_url: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500', category: '数码电子' },
-      { id: 2, name: '智能手表 Pro', price: 1299.50, image_url: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500', category: '数码电子' },
-      { id: 3, name: '经典真皮双肩包', price: 585.00, image_url: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=500', category: '时尚配饰' },
-      { id: 4, name: '人体工学静音鼠标', price: 256.99, image_url: 'https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=500', category: '办公外设' }
-    ];
+onMounted(() => {
+  if (!store.products.length) {
+    store.fetchProducts();
   }
 });
 

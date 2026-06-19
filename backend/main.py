@@ -18,6 +18,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+MOCK_USER_ID = 1
+
+
+def _ensure_mock_user(db: Session) -> models.User:
+    user = db.query(models.User).filter(models.User.id == MOCK_USER_ID).first()
+    if not user:
+        user = models.User(username="demo_user", email="demo@example.com", password="password")
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    return user
+
+
 # Root endpoint
 @app.get("/")
 def read_root():
@@ -38,27 +51,108 @@ def get_product(product_id: int, db: Session = Depends(database.get_db)):
 # Cart endpoints (Simplified, needs auth in a real app)
 @app.get("/cart", response_model=List[schemas.CartItemResponse])
 def get_cart(db: Session = Depends(database.get_db)):
-    # Mocking user_id = 1
-    return db.query(models.CartItem).filter(models.CartItem.user_id == 1).all()
+    _ensure_mock_user(db)
+    return db.query(models.CartItem).filter(models.CartItem.user_id == MOCK_USER_ID).all()
 
 @app.post("/cart", response_model=schemas.CartItemResponse)
 def add_to_cart(item: schemas.CartItemBase, db: Session = Depends(database.get_db)):
-    # Mocking user_id = 1
-    db_item = models.CartItem(user_id=1, product_id=item.product_id, quantity=item.quantity)
+    _ensure_mock_user(db)
+    product = db.query(models.Product).filter(models.Product.id == item.product_id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    existing = (
+        db.query(models.CartItem)
+        .filter(
+            models.CartItem.user_id == MOCK_USER_ID,
+            models.CartItem.product_id == item.product_id,
+        )
+        .first()
+    )
+    if existing:
+        existing.quantity += item.quantity
+        db.commit()
+        db.refresh(existing)
+        return existing
+
+    db_item = models.CartItem(user_id=MOCK_USER_ID, product_id=item.product_id, quantity=item.quantity)
     db.add(db_item)
     db.commit()
     db.refresh(db_item)
     return db_item
 
+@app.patch("/cart/{item_id}", response_model=schemas.CartItemResponse)
+def update_cart_item(item_id: int, payload: schemas.CartItemUpdate, db: Session = Depends(database.get_db)):
+    db_item = (
+        db.query(models.CartItem)
+        .filter(models.CartItem.id == item_id, models.CartItem.user_id == MOCK_USER_ID)
+        .first()
+    )
+    if not db_item:
+        raise HTTPException(status_code=404, detail="Cart item not found")
+    if payload.quantity <= 0:
+        db.delete(db_item)
+        db.commit()
+        raise HTTPException(status_code=410, detail="Cart item removed")
+    db_item.quantity = payload.quantity
+    db.commit()
+    db.refresh(db_item)
+    return db_item
+
+@app.delete("/cart/{item_id}")
+def remove_cart_item(item_id: int, db: Session = Depends(database.get_db)):
+    db_item = (
+        db.query(models.CartItem)
+        .filter(models.CartItem.id == item_id, models.CartItem.user_id == MOCK_USER_ID)
+        .first()
+    )
+    if not db_item:
+        raise HTTPException(status_code=404, detail="Cart item not found")
+    db.delete(db_item)
+    db.commit()
+    return {"ok": True}
+
+# Order endpoints
+@app.get("/orders", response_model=List[schemas.OrderResponse])
+def list_orders(db: Session = Depends(database.get_db)):
+    _ensure_mock_user(db)
+    return (
+        db.query(models.Order)
+        .filter(models.Order.user_id == MOCK_USER_ID)
+        .order_by(models.Order.created_at.desc())
+        .all()
+    )
+
+@app.post("/orders", response_model=schemas.OrderResponse)
+def create_order(db: Session = Depends(database.get_db)):
+    _ensure_mock_user(db)
+    cart_items = (
+        db.query(models.CartItem).filter(models.CartItem.user_id == MOCK_USER_ID).all()
+    )
+    if not cart_items:
+        raise HTTPException(status_code=400, detail="购物车是空的")
+
+    total = sum(float(ci.product.price) * ci.quantity for ci in cart_items)
+    order = models.Order(user_id=MOCK_USER_ID, total=total)
+    db.add(order)
+    db.flush()
+
+    for ci in cart_items:
+        db.add(
+            models.OrderItem(
+                order_id=order.id,
+                product_id=ci.product_id,
+                quantity=ci.quantity,
+                price=ci.product.price,
+            )
+        )
+        db.delete(ci)
+
+    db.commit()
+    db.refresh(order)
+    return order
+
 # User endpoint
 @app.get("/user/profile", response_model=schemas.UserResponse)
 def get_profile(db: Session = Depends(database.get_db)):
-    # Mocking user_id = 1
-    user = db.query(models.User).filter(models.User.id == 1).first()
-    if not user:
-        # Create a mock user if not exists for demo purposes
-        user = models.User(username="demo_user", email="demo@example.com", password="password")
-        db.add(user)
-        db.commit()
-        db.refresh(user)
-    return user
+    return _ensure_mock_user(db)

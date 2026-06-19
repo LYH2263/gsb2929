@@ -62,6 +62,8 @@ const toastRef = ref(null);
 
 onMounted(() => {
   store.toastRef = toastRef.value;
+  store.fetchCart();
+  store.fetchOrders();
 });
 </script>
 
