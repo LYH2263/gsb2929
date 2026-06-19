@@ -13,9 +13,9 @@
             <p class="category">{{ item.product.category }}</p>
             <div class="item-footer">
               <div class="quantity">
-                <button @click="item.quantity > 1 && item.quantity--">-</button>
+                <button @click="decreaseQuantity(item)">-</button>
                 <span>{{ item.quantity }}</span>
-                <button @click="item.quantity++">+</button>
+                <button @click="increaseQuantity(item)">+</button>
               </div>
               <p class="price">¥{{ (item.product.price * item.quantity).toFixed(2) }}</p>
             </div>
@@ -76,10 +76,28 @@ const subtotal = computed(() => {
   return store.cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
 });
 
-const handleCheckout = () => {
-  const orderId = store.checkout();
-  if (orderId) {
-    recentOrder.value = store.orders[0];
+const increaseQuantity = (item) => {
+  store.updateCartItemQuantity(item.id, item.quantity + 1);
+};
+
+const decreaseQuantity = (item) => {
+  if (item.quantity > 1) {
+    store.updateCartItemQuantity(item.id, item.quantity - 1);
+  }
+};
+
+const handleCheckout = async () => {
+  const order = await store.checkout();
+  if (order) {
+    recentOrder.value = {
+      id: order.order_no,
+      items: order.items.map(oi => ({
+        id: oi.id,
+        product: { name: oi.product_name, price: oi.product_price },
+        quantity: oi.quantity
+      })),
+      total: order.total
+    };
   }
 };
 </script>

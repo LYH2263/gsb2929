@@ -60,8 +60,9 @@ const router = useRouter();
 const store = useAppStore();
 const toastRef = ref(null);
 
-onMounted(() => {
+onMounted(async () => {
   store.toastRef = toastRef.value;
+  await store.initApp();
 });
 </script>
 
