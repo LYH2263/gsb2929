@@ -29,5 +29,7 @@ services:
       dockerfile: Dockerfile
     ports:
       - "2929:5173"
+    environment:
+      - VITE_API_TARGET=http://backend:8000
     depends_on:
       - backend
