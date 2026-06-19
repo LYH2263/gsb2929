@@ -5,8 +5,8 @@
         <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="Avatar" />
       </div>
       <div class="user-info">
-        <h1>{{ user?.username || '游客用户' }}</h1>
-        <p>{{ user?.email || '登录以同步您的个人资料' }}</p>
+        <h1>{{ store.user?.username || '游客用户' }}</h1>
+        <p>{{ store.user?.email || '登录以同步您的个人资料' }}</p>
       </div>
       <button class="edit-btn" @click="store.handleUnimplemented('编辑资料')">编辑资料</button>
     </div>
@@ -54,21 +54,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
 import { useAppStore } from '../store';
 
 const store = useAppStore();
-const user = ref(null);
-
-onMounted(async () => {
-  try {
-    const response = await fetch('http://localhost:8000/user/profile');
-    user.value = await response.json();
-  } catch (error) {
-    console.error('Failed to fetch profile:', error);
-    user.value = { username: 'Felix Chen', email: 'felix@example.com' };
-  }
-});
 </script>
 
 <style scoped>
