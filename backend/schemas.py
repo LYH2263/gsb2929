@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from datetime import datetime
 from typing import List, Optional
 
 class ProductBase(BaseModel):
@@ -24,6 +25,9 @@ class CartItemResponse(CartItemBase):
     class Config:
         from_attributes = True
 
+class CartItemUpdate(BaseModel):
+    quantity: int
+
 class UserBase(BaseModel):
     username: str
     email: str
@@ -33,5 +37,22 @@ class UserCreate(UserBase):
 
 class UserResponse(UserBase):
     id: int
+    class Config:
+        from_attributes = True
+
+class OrderItemResponse(BaseModel):
+    id: int
+    product_id: int
+    quantity: int
+    price: float
+    product: ProductResponse
+    class Config:
+        from_attributes = True
+
+class OrderResponse(BaseModel):
+    id: int
+    total: float
+    created_at: datetime
+    items: List[OrderItemResponse]
     class Config:
         from_attributes = True

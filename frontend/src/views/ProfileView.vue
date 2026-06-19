@@ -54,20 +54,15 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useAppStore } from '../store';
 
 const store = useAppStore();
-const user = ref(null);
+const user = computed(() => store.user);
 
-onMounted(async () => {
-  try {
-    const response = await fetch('http://localhost:8000/user/profile');
-    user.value = await response.json();
-  } catch (error) {
-    console.error('Failed to fetch profile:', error);
-    user.value = { username: 'Felix Chen', email: 'felix@example.com' };
-  }
+onMounted(() => {
+  store.fetchProfile();
+  store.fetchOrders();
 });
 </script>
 

@@ -13,9 +13,9 @@
             <p class="category">{{ item.product.category }}</p>
             <div class="item-footer">
               <div class="quantity">
-                <button @click="item.quantity > 1 && item.quantity--">-</button>
+                <button @click="store.updateCartItem(item.id, item.quantity - 1)">-</button>
                 <span>{{ item.quantity }}</span>
-                <button @click="item.quantity++">+</button>
+                <button @click="store.updateCartItem(item.id, item.quantity + 1)">+</button>
               </div>
               <p class="price">¥{{ (item.product.price * item.quantity).toFixed(2) }}</p>
             </div>
@@ -64,7 +64,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAppStore } from '../store';
 
@@ -76,10 +76,14 @@ const subtotal = computed(() => {
   return store.cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
 });
 
-const handleCheckout = () => {
-  const orderId = store.checkout();
-  if (orderId) {
-    recentOrder.value = store.orders[0];
+onMounted(() => {
+  store.fetchCart();
+});
+
+const handleCheckout = async () => {
+  const order = await store.checkout();
+  if (order) {
+    recentOrder.value = order;
   }
 };
 </script>
