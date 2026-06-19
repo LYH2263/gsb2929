@@ -28,7 +28,25 @@ CREATE TABLE IF NOT EXISTS cart_items (
     FOREIGN KEY (product_id) REFERENCES products(id)
 );
 
--- 初始数据
+CREATE TABLE IF NOT EXISTS orders (
+    id VARCHAR(50) PRIMARY KEY,
+    user_id INT NOT NULL,
+    total DECIMAL(10, 2) NOT NULL,
+    date DATETIME DEFAULT CURRENT_TIMESTAMP,
+    status VARCHAR(20) DEFAULT 'paid',
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+CREATE TABLE IF NOT EXISTS order_items (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    order_id VARCHAR(50) NOT NULL,
+    product_id INT NOT NULL,
+    quantity INT DEFAULT 1,
+    price DECIMAL(10, 2) NOT NULL,
+    FOREIGN KEY (order_id) REFERENCES orders(id),
+    FOREIGN KEY (product_id) REFERENCES products(id)
+);
+
 INSERT INTO products (name, description, price, image_url, stock, category) VALUES
 ('至臻无线降噪耳机', '高品质音质，采用先进的降噪技术，为您带来沉浸式听觉体验。', 1999.00, 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500', 50, '数码电子'),
 ('智能手表 Pro', '全天候监测您的健身数据、心率和通知，是您的完美生活助手。', 1299.50, 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500', 100, '数码电子'),

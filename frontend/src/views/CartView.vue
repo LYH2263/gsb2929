@@ -13,9 +13,9 @@
             <p class="category">{{ item.product.category }}</p>
             <div class="item-footer">
               <div class="quantity">
-                <button @click="item.quantity > 1 && item.quantity--">-</button>
+                <button @click="decreaseQuantity(item)">-</button>
                 <span>{{ item.quantity }}</span>
-                <button @click="item.quantity++">+</button>
+                <button @click="increaseQuantity(item)">+</button>
               </div>
               <p class="price">¥{{ (item.product.price * item.quantity).toFixed(2) }}</p>
             </div>
@@ -37,7 +37,9 @@
           <span>总计</span>
           <span>¥{{ subtotal.toFixed(2) }}</span>
         </div>
-        <button class="checkout-btn" @click="handleCheckout">立即结算</button>
+        <button class="checkout-btn" @click="handleCheckout" :disabled="isCheckingOut">
+          {{ isCheckingOut ? '处理中...' : '立即结算' }}
+        </button>
       </div>
     </div>
     <div v-else-if="recentOrder" class="order-success">
@@ -55,6 +57,7 @@
         </div>
       </div>
       <button class="back-btn" @click="router.push('/')">返回首页</button>
+      <button class="orders-btn" @click="router.push('/profile')">查看我的订单</button>
     </div>
     <div v-else class="empty-cart">
       <p>您的购物袋是空的。</p>
@@ -71,15 +74,32 @@ import { useAppStore } from '../store';
 const router = useRouter();
 const store = useAppStore();
 const recentOrder = ref(null);
+const isCheckingOut = ref(false);
 
 const subtotal = computed(() => {
   return store.cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
 });
 
-const handleCheckout = () => {
-  const orderId = store.checkout();
-  if (orderId) {
-    recentOrder.value = store.orders[0];
+const decreaseQuantity = async (item) => {
+  if (item.quantity > 1) {
+    await store.updateCartQuantity(item.id, item.quantity - 1);
+  }
+};
+
+const increaseQuantity = async (item) => {
+  await store.updateCartQuantity(item.id, item.quantity + 1);
+};
+
+const handleCheckout = async () => {
+  isCheckingOut.value = true;
+  try {
+    const orderId = await store.checkout();
+    if (orderId) {
+      recentOrder.value = store.orders[0];
+      await store.loadOrders();
+    }
+  } finally {
+    isCheckingOut.value = false;
   }
 };
 </script>
@@ -243,7 +263,12 @@ const handleCheckout = () => {
   transition: all 0.3s;
 }
 
-.checkout-btn:hover {
+.checkout-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.checkout-btn:hover:not(:disabled) {
   background: #000;
   transform: translateY(-2px);
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
@@ -319,19 +344,33 @@ const handleCheckout = () => {
   color: #00b894;
 }
 
-.back-btn {
+.back-btn, .orders-btn {
   padding: 14px 40px;
   border-radius: 12px;
-  border: 1px solid #2d3436;
-  background: white;
-  color: #2d3436;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
+  margin: 0 10px;
+}
+
+.back-btn {
+  border: 1px solid #2d3436;
+  background: white;
+  color: #2d3436;
 }
 
 .back-btn:hover {
   background: #2d3436;
   color: white;
+}
+
+.orders-btn {
+  border: none;
+  background: #00b894;
+  color: white;
+}
+
+.orders-btn:hover {
+  background: #00a885;
 }
 </style>
