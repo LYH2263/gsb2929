@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from typing import List, Optional
+from datetime import datetime
 
 class ProductBase(BaseModel):
     name: str
@@ -18,11 +19,40 @@ class CartItemBase(BaseModel):
     product_id: int
     quantity: int
 
+class CartItemUpdate(BaseModel):
+    quantity: int
+
 class CartItemResponse(CartItemBase):
     id: int
     product: ProductResponse
     class Config:
         from_attributes = True
+
+class OrderItemResponse(BaseModel):
+    id: int
+    product_id: int
+    product_name: str
+    product_image: Optional[str] = None
+    product_category: Optional[str] = None
+    quantity: int
+    price: float
+    class Config:
+        from_attributes = True
+
+class OrderResponse(BaseModel):
+    id: int
+    user_id: int
+    total: float
+    status: str
+    created_at: Optional[datetime] = None
+    items: List[OrderItemResponse] = []
+    class Config:
+        from_attributes = True
+
+class OrderCreateResponse(BaseModel):
+    order_id: int
+    total: float
+    status: str
 
 class UserBase(BaseModel):
     username: str

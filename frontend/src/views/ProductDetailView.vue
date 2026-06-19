@@ -1,18 +1,18 @@
 <template>
-  <div class="product-detail" v-if="product">
+  <div class="product-detail" v-if="store.product">
     <div class="container">
       <div class="image-gallery">
-        <img :src="product.image_url" :alt="product.name" />
+        <img :src="store.product.image_url" :alt="store.product.name" />
       </div>
       <div class="product-info">
         <nav class="breadcrumb">
-          <span @click="router.push('/')">商城</span> / <span>{{ product.category }}</span>
+          <span @click="router.push('/')">商城</span> / <span>{{ store.product.category }}</span>
         </nav>
-        <h1>{{ product.name }}</h1>
-        <p class="price">¥{{ product.price }}</p>
+        <h1>{{ store.product.name }}</h1>
+        <p class="price">¥{{ store.product.price }}</p>
         <div class="description">
           <h3>产品描述</h3>
-          <p>{{ product.description || '体验创新与优雅的完美结合。这款产品旨在以无与伦比的性能和风格提升您的日常生活。' }}</p>
+          <p>{{ store.product.description || '体验创新与优雅的完美结合。这款产品旨在以无与伦比的性能和风格提升您的日常生活。' }}</p>
         </div>
         
         <div class="actions">
@@ -46,30 +46,15 @@ import { useAppStore } from '../store';
 const route = useRoute();
 const router = useRouter();
 const store = useAppStore();
-const product = ref(null);
 const quantity = ref(1);
 
 onMounted(async () => {
   const id = route.params.id;
-  try {
-    const response = await fetch(`http://localhost:8000/products/${id}`);
-    product.value = await response.json();
-  } catch (error) {
-    console.error('Failed to fetch product:', error);
-    // Mock data
-    product.value = {
-      id,
-      name: '至臻无线降噪耳机',
-      price: 1999.00,
-      image_url: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800',
-      category: '数码电子',
-      description: '采用顶级无线技术，为您提供卓越的听觉盛宴。内置先进的智能降噪芯片，为您隔绝喧嚣，时刻沉浸在音乐之中。配合长达40小时的续航时间，音乐触手可及。'
-    };
-  }
+  await store.fetchProduct(id);
 });
 
 const addToCart = () => {
-  store.addToCart(product.value, quantity.value);
+  store.addToCart(store.product, quantity.value);
 };
 </script>
 

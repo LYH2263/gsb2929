@@ -13,9 +13,9 @@
             <p class="category">{{ item.product.category }}</p>
             <div class="item-footer">
               <div class="quantity">
-                <button @click="item.quantity > 1 && item.quantity--">-</button>
+                <button @click="decreaseQty(item)">-</button>
                 <span>{{ item.quantity }}</span>
-                <button @click="item.quantity++">+</button>
+                <button @click="increaseQty(item)">+</button>
               </div>
               <p class="price">¥{{ (item.product.price * item.quantity).toFixed(2) }}</p>
             </div>
@@ -73,13 +73,37 @@ const store = useAppStore();
 const recentOrder = ref(null);
 
 const subtotal = computed(() => {
-  return store.cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+  return store.cart.reduce((sum, item) => sum + Number(item.product.price) * item.quantity, 0);
 });
 
-const handleCheckout = () => {
-  const orderId = store.checkout();
+const decreaseQty = (item) => {
+  if (item.quantity > 1) {
+    store.updateCartQuantity(item.id, item.quantity - 1);
+  }
+};
+
+const increaseQty = (item) => {
+  store.updateCartQuantity(item.id, item.quantity + 1);
+};
+
+const handleCheckout = async () => {
+  const snapshot = store.cart.map(item => ({
+    id: item.id,
+    product: { ...item.product, price: Number(item.product.price) },
+    quantity: item.quantity
+  }));
+  const orderId = await store.checkout();
   if (orderId) {
-    recentOrder.value = store.orders[0];
+    const orderFromStore = store.orders.find(o => o.id === orderId);
+    if (orderFromStore) {
+      recentOrder.value = orderFromStore;
+    } else {
+      recentOrder.value = {
+        id: orderId,
+        items: snapshot,
+        total: snapshot.reduce((sum, it) => sum + it.product.price * it.quantity, 0),
+      };
+    }
   }
 };
 </script>
